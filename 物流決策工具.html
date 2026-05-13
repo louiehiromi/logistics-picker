@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物流配送決策工具</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F3EE;
+    --surface: #FFFFFF;
+    --border: #E0DDD5;
+    --border-strong: #C8C4B8;
+    --text-primary: #1A1916;
+    --text-secondary: #6B6860;
+    --text-tertiary: #A09D96;
+    --accent: #2C5F2E;
+    --accent-light: #EAF2EA;
+    --accent-text: #1E4220;
+    --danger: #C0392B;
+    --danger-light: #FDECEA;
+    --warning: #8B5E00;
+    --warning-light: #FEF6E4;
+    --neutral-light: #F0EDE6;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1.5px solid var(--border-strong);
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  header p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 1rem;
+  }
+
+  .specs-header {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 8px;
+    padding: 0 0 6px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+
+  .specs-header span {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .specs-header span:last-child { text-align: right; }
+
+  .spec-row {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .spec-row:last-child { border-bottom: none; }
+
+  .size-info { display: flex; flex-direction: column; gap: 2px; }
+
+  .size-main {
+    font-size: 0.95rem;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text-primary);
+  }
+
+  .size-sub {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+  }
+
+  input[type="number"] {
+    width: 100%;
+    height: 38px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 0 6px 0 12px;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background: var(--surface);
+    text-align: right;
+    transition: border-color 0.15s;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: inner-spin-button;
+    opacity: 1;
+    cursor: pointer;
+  }
+
+  input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(44,95,46,0.1);
+  }
+
+  .row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+
+  .total-summary {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  .total-summary strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .clear-btn {
+    font-size: 0.78rem;
+    padding: 5px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .clear-btn:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--danger-light);
+  }
+
+  .toggle-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .toggle-btn {
+    font-size: 0.83rem;
+    padding: 7px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: var(--sans);
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+
+  .toggle-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .toggle-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  select {
+    width: 100%;
+    max-width: 400px;
+    height: 40px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 0 12px;
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    background: var(--surface);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A09D96' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  select:focus { outline: none; border-color: var(--accent); }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.25rem 0;
+  }
+
+  .results-section { margin-top: 1rem; }
+
+  .results-section h2 {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 0.75rem;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: box-shadow 0.15s;
+  }
+
+  .result-card.best {
+    border: 2px solid var(--accent);
+    background: var(--accent-light);
+  }
+
+  .result-card.na {
+    opacity: 0.45;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+    letter-spacing: 0.03em;
+  }
+
+  .badge.best { background: var(--accent); color: #fff; }
+  .badge.alt { background: var(--neutral-light); color: var(--text-secondary); }
+  .badge.na { background: var(--neutral-light); color: var(--text-tertiary); }
+
+  .carrier-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .carrier-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--text-primary);
+    margin: 6px 0 6px;
+    letter-spacing: -0.02em;
+  }
+
+  .result-card.best .carrier-price { color: var(--accent-text); }
+
+  .carrier-note {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .tip-box {
+    background: var(--warning-light);
+    border: 1px solid #E8C96A;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--warning);
+    margin-top: 12px;
+    line-height: 1.6;
+    display: none;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+  }
+
+  @media (max-width: 480px) {
+    .results-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>物流配送決策工具</h1>
+    <p>輸入各尺寸箱數，自動比較最划算的物流方案</p>
+  </header>
+
+  <div class="card">
+    <div class="section-label">箱子規格</div>
+    <div class="specs-header">
+      <span>尺寸</span>
+      <span>箱數</span>
+    </div>
+    <div class="spec-row">
+      <div class="size-info">
+        <span class="size-main">&lt; S60</span>
+        <span class="size-sub">60cm 以下</span>
+      </div>
+      <input type="number" id="qty-60" min="0" step="1" placeholder="0" oninput="calc()">
+    </div>
+    <div class="spec-row">
+      <div class="size-info">
+        <span class="size-main">S60–90</span>
+        <span class="size-sub">61–90cm</span>
+      </div>
+      <input type="number" id="qty-90" min="0" step="1" placeholder="0" oninput="calc()">
+    </div>
+    <div class="spec-row">
+      <div class="size-info">
+        <span class="size-main">S90–120</span>
+        <span class="size-sub">91–120cm</span>
+      </div>
+      <input type="number" id="qty-120" min="0" step="1" placeholder="0" oninput="calc()">
+    </div>
+    <div class="spec-row">
+      <div class="size-info">
+        <span class="size-main">&gt; S120</span>
+        <span class="size-sub">121–150cm</span>
+      </div>
+      <input type="number" id="qty-150" min="0" step="1" placeholder="0" oninput="calc()">
+    </div>
+    <div class="row-actions">
+      <div class="total-summary" id="total-summary">共 <strong>0 箱</strong></div>
+      <button class="clear-btn" onclick="clearAll()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        清除箱數
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">配送類型</div>
+    <div class="toggle-group">
+      <button class="toggle-btn active" data-type="normal" onclick="setType(this)">常溫</button>
+      <button class="toggle-btn" data-type="cold" onclick="setType(this)">冷藏</button>
+      <button class="toggle-btn" data-type="coupang" onclick="setType(this)">酷澎</button>
+      <button class="toggle-btn" data-type="fullquantum" onclick="setType(this)">配送全聯</button>
+      <button class="toggle-btn" data-type="remote" onclick="setType(this)">偏遠地區</button>
+    </div>
+
+    <div id="dest-section">
+      <div class="divider"></div>
+      <div class="section-label">世政目的地（整車配送適用）</div>
+      <select id="seijeng-dest" onchange="calc()">
+        <option value="">-- 選擇地區 --</option>
+        <optgroup label="桃園">
+          <option value="1300">桃園一（平鎮、龍潭、大溪）$1,300</option>
+          <option value="1400">桃園二（桃園、八德、楊梅）$1,400</option>
+          <option value="1500">桃園三（蘆竹、大園、龜山）$1,500</option>
+        </optgroup>
+        <optgroup label="台北縣市">
+          <option value="2100">台北市 $2,100</option>
+          <option value="1700">北縣三（三重、蘆洲、新店、八里）$1,700</option>
+          <option value="1800">北縣四（五股、新莊、中和、板橋）$1,800</option>
+          <option value="1900">北縣五（土城、樹林、泰山、林口）$1,900</option>
+          <option value="2400">基隆市 $2,400</option>
+        </optgroup>
+        <optgroup label="新竹">
+          <option value="1700">新竹一（關西、新埔、湖口）$1,700</option>
+          <option value="1800">新竹二（芎林、橫山、竹北）$1,800</option>
+          <option value="1900">新竹三（新竹市、新豐、寶山）$1,900</option>
+        </optgroup>
+        <optgroup label="台中以南">
+          <option value="3300">台中一 $3,300</option>
+          <option value="3600">台中二 $3,600</option>
+          <option value="3900">台中三 $3,900</option>
+          <option value="4600">彰化 $4,600</option>
+          <option value="5400">雲林 $5,400</option>
+          <option value="6400">嘉義 $6,400</option>
+          <option value="7400">台南 $7,400</option>
+          <option value="8400">高雄 $8,400</option>
+        </optgroup>
+      </select>
+    </div>
+  </div>
+
+  <div class="results-section">
+    <h2>配送方案比較</h2>
+    <div class="results-grid" id="results"></div>
+    <div class="tip-box" id="tip"></div>
+  </div>
+
+</div>
+
+<script>
+let deliveryType = 'normal';
+
+function clearAll() {
+  ['qty-60','qty-90','qty-120','qty-150'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  calc();
+}
+
+function setType(btn) {
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  deliveryType = btn.dataset.type;
+  const hideTypes = ['cold', 'fullquantum'];
+  document.getElementById('dest-section').style.display = hideTypes.includes(deliveryType) ? 'none' : '';
+  calc();
+}
+
+function getSpecs() {
+  return [
+    {size:60,  qty: parseInt(document.getElementById('qty-60').value)  || 0},
+    {size:90,  qty: parseInt(document.getElementById('qty-90').value)  || 0},
+    {size:120, qty: parseInt(document.getElementById('qty-120').value) || 0},
+    {size:150, qty: parseInt(document.getElementById('qty-150').value) || 0},
+  ].filter(s => s.qty > 0);
+}
+
+function bcPrice(size, type) {
+  if (type === 'cold') {
+    if (size <= 60)  return 160;
+    if (size <= 90)  return 225;
+    if (size <= 120) return 290;
+    return null;
+  }
+  if (type === 'coupang') {
+    if (size <= 60)  return 130;
+    if (size <= 90)  return 170;
+    if (size <= 120) return 210;
+    return 250;
+  }
+  if (size <= 60)  return 80;
+  if (size <= 90)  return 90;
+  if (size <= 120) return 110;
+  if (size <= 150) return 200;
+  return null;
+}
+
+function ztPrice(size) {
+  if (size <= 90)  return 91;
+  if (size <= 150) return 96;
+  return null;
+}
+
+function sizeLabel(size) {
+  if (size <= 60)  return '&lt; S60';
+  if (size <= 90)  return 'S60–90';
+  if (size <= 120) return 'S90–120';
+  return '&gt; S120';
+}
+
+function naCard(name, reason) {
+  return {name, badge:'不支援', badgeClass:'na', note:reason, totalDisplay:'—', score:Infinity};
+}
+
+function renderCard(c) {
+  return `
+    <div class="result-card${c.isBest ? ' best' : ''}${c.badgeClass === 'na' ? ' na' : ''}">
+      ${c.badge ? `<div class="badge ${c.badgeClass}">${c.badge}</div>` : ''}
+      <div class="carrier-name">${c.name}</div>
+      <div class="carrier-price">${c.totalDisplay}</div>
+      <div class="carrier-note">${c.note}</div>
+    </div>`;
+}
+
+function calc() {
+  const activeSpecs = getSpecs();
+  const totalQty = activeSpecs.reduce((s,r) => s + r.qty, 0);
+
+  const parts = [
+    {id:'qty-60',label:'&lt;S60'},{id:'qty-90',label:'S60–90'},
+    {id:'qty-120',label:'S90–120'},{id:'qty-150',label:'&gt;S120'}
+  ].filter(p => parseInt(document.getElementById(p.id).value) > 0)
+   .map(p => `${p.label}×${parseInt(document.getElementById(p.id).value)}`);
+
+  document.getElementById('total-summary').innerHTML =
+    totalQty === 0
+      ? '共 <strong>0 箱</strong>'
+      : `共 <strong>${totalQty} 箱</strong>（${parts.join('、')}）`;
+
+  const type = deliveryType;
+  const destVal = document.getElementById('seijeng-dest').value;
+  const cards = [];
+
+  if (totalQty === 0) {
+    document.getElementById('results').innerHTML = `<div class="empty-state">請輸入至少一個規格的箱數</div>`;
+    document.getElementById('tip').style.display = 'none';
+    return;
+  }
+
+  if (type === 'coupang') {
+    let bcTotal = 0;
+    const bcBreak = [];
+    for (const s of activeSpecs) {
+      const p = bcPrice(s.size, 'coupang');
+      bcTotal += p * s.qty;
+      bcBreak.push(`${sizeLabel(s.size)} $${p}×${s.qty}`);
+    }
+    cards.push({name:'黑貓', note:'酷澎牌價（含附加金）<br>' + bcBreak.join('、'), total:bcTotal, totalDisplay:`$${bcTotal.toLocaleString()}`, score:bcTotal});
+
+    if (destVal) {
+      const dp = parseInt(destVal);
+      const perBox = Math.round(dp / totalQty);
+      cards.push({name:'世政', note:`整車專送，約 $${perBox}/箱<br>共 ${totalQty} 箱`, total:dp, totalDisplay:`$${dp.toLocaleString()}`, score:dp});
+    } else {
+      cards.push({name:'世政', badge:'請選地區', badgeClass:'na', note:'需選擇目的地才能計算', totalDisplay:'—', score:Infinity});
+    }
+
+    cards.push(naCard('宅配通','酷澎不適用'));
+    cards.push(naCard('新竹物流','酷澎不適用'));
+    cards.push(naCard('臺崙','酷澎不適用'));
+
+    const valid = cards.filter(c => c.score !== Infinity);
+    if (valid.length) {
+      const min = Math.min(...valid.map(c => c.score));
+      valid.forEach(c => { if (c.score === min) { c.badge='最划算'; c.badgeClass='best'; c.isBest=true; }});
+    }
+
+  } else if (type === 'cold') {
+    let bcTotal = 0, bcFail = null;
+    const bcBreak = [];
+    for (const s of activeSpecs) {
+      const p = bcPrice(s.size, 'cold');
+      if (p === null) { bcFail = sizeLabel(s.size); break; }
+      bcTotal += p * s.qty;
+      bcBreak.push(`${sizeLabel(s.size)} $${p}×${s.qty}`);
+    }
+    if (!bcFail) {
+      cards.push({name:'黑貓', badge:'唯一冷藏選項', badgeClass:'best', isBest:true, note:bcBreak.join('、'), totalDisplay:`$${bcTotal.toLocaleString()}`, score:bcTotal});
+    } else {
+      cards.push({name:'黑貓', badge:'不適用', badgeClass:'na', note:`冷藏僅支援到 S90–120<br>${bcFail} 無法配送`, totalDisplay:'—', score:Infinity});
+    }
+    cards.push(naCard('宅配通','不提供冷藏配送'));
+    cards.push(naCard('新竹物流','不提供冷藏配送'));
+    cards.push(naCard('世政','不提供冷藏配送'));
+    cards.push(naCard('臺崙','不提供冷藏配送'));
+
+  } else if (type === 'fullquantum') {
+    cards.push({name:'臺崙', badge:'主力推薦', badgeClass:'best', isBest:true, note:'大量配送全聯首選', totalDisplay:'依合約', score:0});
+    cards.push({name:'黑貓', badge:'次選', badgeClass:'alt', note:'全聯以外門市可補送', totalDisplay:'依件計費', score:1});
+
+  } else if (type === 'remote') {
+    cards.push({name:'臺崙', badge:'可協助', badgeClass:'alt', note:'偏遠地區偶可協助，需事先確認', totalDisplay:'洽詢', score:0});
+    let bcT = 0, bcFail2 = false;
+    for (const s of activeSpecs) {
+      const p = bcPrice(s.size, 'normal');
+      if (p === null) { bcFail2 = true; break; }
+      bcT += p * s.qty;
+    }
+    if (!bcFail2) {
+      cards.push({name:'黑貓', badge:'可配偏遠', badgeClass:'alt', note:'偏遠加收附加費', totalDisplay:`$${bcT.toLocaleString()}+`, score:1});
+    } else {
+      cards.push(naCard('黑貓','含無法配送的尺寸'));
+    }
+
+  } else {
+    let bcTotal = 0, bcFail = null;
+    const bcBreak = [];
+    for (const s of activeSpecs) {
+      const p = bcPrice(s.size, type);
+      if (p === null) { bcFail = sizeLabel(s.size); break; }
+      bcTotal += p * s.qty;
+      bcBreak.push(`${sizeLabel(s.size)} $${p}×${s.qty}`);
+    }
+    if (!bcFail) {
+      cards.push({name:'黑貓', note:bcBreak.join('、'), total:bcTotal, totalDisplay:`$${bcTotal.toLocaleString()}`, score:bcTotal});
+    } else {
+      cards.push({name:'黑貓', badge:'不適用', badgeClass:'na', note:`${bcFail} 無法配送`, totalDisplay:'—', score:Infinity});
+    }
+
+    let ztTotal = 0, ztFail = null;
+    const ztBreak = [];
+    for (const s of activeSpecs) {
+      const p = ztPrice(s.size);
+      if (p === null) { ztFail = sizeLabel(s.size); break; }
+      ztTotal += p * s.qty;
+      ztBreak.push(`${sizeLabel(s.size)} $${p}×${s.qty}`);
+    }
+    if (!ztFail) {
+      cards.push({name:'宅配通', note:ztBreak.join('、'), total:ztTotal, totalDisplay:`$${ztTotal.toLocaleString()}`, score:ztTotal});
+    } else {
+      cards.push({name:'宅配通', badge:'不適用', badgeClass:'na', note:`${ztFail} 無法配送`, totalDisplay:'—', score:Infinity});
+    }
+
+    const hcOk = activeSpecs.every(s => s.size <= 90);
+    if (hcOk) {
+      const hcP = totalQty <= 10 ? 120 : 110;
+      const hcTotal = hcP * totalQty;
+      cards.push({name:'新竹物流', note:`${totalQty<=10?'月10件以下':'11件以上'} @$${hcP}<br>共 ${totalQty} 件`, total:hcTotal, totalDisplay:`$${hcTotal.toLocaleString()}`, score:hcTotal});
+    } else {
+      cards.push({name:'新竹物流', badge:'不適用', badgeClass:'na', note:'含 S90 以上箱子，不適用', totalDisplay:'—', score:Infinity});
+    }
+
+    if (destVal) {
+      const dp = parseInt(destVal);
+      const perBox = Math.round(dp / totalQty);
+      cards.push({name:'世政', note:`整車專送，約 $${perBox}/箱<br>共 ${totalQty} 箱`, total:dp, totalDisplay:`$${dp.toLocaleString()}`, score:dp});
+    } else {
+      cards.push({name:'世政', badge:'請選地區', badgeClass:'na', note:'需選擇目的地才能計算', totalDisplay:'—', score:Infinity});
+    }
+
+    cards.push({name:'臺崙', badge:'全聯專線', badgeClass:'alt', note:'主要服務全聯通路', totalDisplay:'依合約', score:Infinity});
+
+    const valid = cards.filter(c => c.score !== Infinity);
+    if (valid.length) {
+      const min = Math.min(...valid.map(c => c.score));
+      valid.forEach(c => { if (c.score === min) { c.badge='最划算'; c.badgeClass='best'; c.isBest=true; }});
+    }
+  }
+
+  document.getElementById('results').innerHTML = cards.map(renderCard).join('');
+
+  const tip = document.getElementById('tip');
+  if (type === 'normal') {
+    const msgs = [];
+    const maxSize = activeSpecs.length ? Math.max(...activeSpecs.map(s=>s.size)) : 0;
+    if (maxSize > 90) msgs.push('含 S90 以上的箱子，新竹物流不適用。');
+    if (totalQty >= 20 && destVal) msgs.push('箱數多，可評估世政整車是否更划算。');
+    if (totalQty <= 10 && activeSpecs.every(s=>s.size<=90)) msgs.push('新竹物流月10件以下每件 $120。');
+    tip.textContent = msgs.join(' ');
+    tip.style.display = msgs.length ? 'block' : 'none';
+  } else {
+    tip.style.display = 'none';
+  }
+}
+
+calc();
+</script>
+</body>
+</html>
